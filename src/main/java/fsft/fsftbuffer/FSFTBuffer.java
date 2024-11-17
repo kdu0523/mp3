@@ -1,6 +1,7 @@
 package fsft.fsftbuffer;
 
 import java.time.Duration;
+import java.util.*;
 
 public class FSFTBuffer<B extends Bufferable> {
 
@@ -11,6 +12,8 @@ public class FSFTBuffer<B extends Bufferable> {
     public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(180);
 
     /* TODO: Implement this datatype */
+    private final LinkedHashMap<String, B> buffer = new LinkedHashMap<>();
+    private final int capacity;
 
     /**
      * Create a buffer with a fixed capacity and a timeout value.
@@ -22,7 +25,13 @@ public class FSFTBuffer<B extends Bufferable> {
      *                 be in the buffer before it times out
      */
     public FSFTBuffer(int capacity, Duration timeout) {
-        // TODO: implement this constructor
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Capacity must be a positive integer");
+        }
+        if (timeout.isNegative()) {
+            throw new IllegalArgumentException("Timeout must be a positive duration");
+        }
+        this.capacity = capacity;
     }
 
     /**
@@ -41,22 +50,33 @@ public class FSFTBuffer<B extends Bufferable> {
      * {@code b.id()}.
      */
     public boolean put(B b) {
-        // TODO: implement this method
-        return false;
+        String id = b.id();
+
+        if (buffer.containsKey(id)) {
+            buffer.remove(id);
+        }
+
+        buffer.put(id, b);
+
+        if (buffer.size() > capacity) {
+            buffer.remove(buffer.keySet().iterator().next());
+        }
+
+        return true;
     }
+
 
     /**
      * @param id the identifier of the object to be retrieved
      * @return the object that matches the identifier from the
      * buffer
      */
-    public B get(String id) {
-        /* TODO: change this */
-        /* Do not return null. Throw a suitable checked exception when an object
-            is not in the cache. You can add the checked exception to the method
-            signature. You can change the method signature to include a throws
-            clause. */
-        return null;
+    public B get(String id) throws ObjectNotFoundException {
+        B obj = buffer.get(id);
+        if (obj == null) {
+            throw new ObjectNotFoundException("Object " + id + " not found in the buffer.");
+        }
+        return obj;
     }
 
     /**
@@ -68,7 +88,12 @@ public class FSFTBuffer<B extends Bufferable> {
      * @return true if successful and false otherwise
      */
     public boolean touch(String id) {
-        /* TODO: Implement this method */
-        return false;
+    if (buffer.containsKey(id)) {
+        B value = buffer.remove(id);
+        buffer.put(id, value);
+        return true;
     }
+    return false;
+}
+
 }
