@@ -3,6 +3,18 @@ package fsft.fsftbuffer;
 import java.time.Duration;
 import java.util.*;
 
+import java.time.Duration;
+import java.util.*;
+
+
+/**
+ * FSFTBuffer is a cache of objects that time out after a certain period of time.
+ * The buffer has a fixed capacity and uses a least recently used (LRU) eviction
+ * policy. Objects in the buffer that have not been refreshed within the timeout
+ * period are removed from the cache.
+ *
+ * @param <B> the type of the objects in the buffer
+ */
 public class FSFTBuffer<B extends Bufferable> {
 
     /* the default buffer size is 32 objects */
@@ -17,8 +29,6 @@ public class FSFTBuffer<B extends Bufferable> {
 
     /**
      * Create a buffer with a fixed capacity and a timeout value.
-     * Objects in the buffer that have not been refreshed within the
-     * timeout period are removed from the cache.
      *
      * @param capacity the number of objects the buffer can hold
      * @param timeout  the duration, in seconds, an object should
@@ -88,12 +98,12 @@ public class FSFTBuffer<B extends Bufferable> {
      * @return true if successful and false otherwise
      */
     public boolean touch(String id) {
-    if (buffer.containsKey(id)) {
-        B value = buffer.remove(id);
-        buffer.put(id, value);
-        return true;
+        if (buffer.containsKey(id)) {
+            B value = buffer.remove(id);
+            buffer.put(id, value);
+            return true;
+        }
+        return false;
     }
-    return false;
-}
 
 }
