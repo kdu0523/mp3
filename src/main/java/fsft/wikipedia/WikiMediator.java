@@ -66,7 +66,7 @@ public class WikiMediator {
      */
     public Set<String> getCategoriesOnPage(String pageTitle) {
         Wiki wiki = new Wiki.Builder().withDomain("en.wikipedia.org").build();
-        return (Set<String>) wiki.getCategoriesOnPage(pageTitle);
+        return new HashSet<>(wiki.getCategoriesOnPage(pageTitle));
     }
 
     /**
@@ -77,7 +77,7 @@ public class WikiMediator {
      */
     public Set<String> getLinksOnPage(String pageTitle) {
         Wiki wiki = new Wiki.Builder().withDomain("en.wikipedia.org").build();
-        return (Set<String>) wiki.getLinksOnPage(pageTitle);
+        return new HashSet<>(wiki.getLinksOnPage(pageTitle));
     }
 
     /**
@@ -89,6 +89,6 @@ public class WikiMediator {
      */
     public Set<String> search(String searchQuery, int limit) {
         Wiki wiki = new Wiki.Builder().withDomain("en.wikipedia.org").build();
-        return (Set<String>) wiki.search(searchQuery, limit);
+        return new HashSet<>(wiki.search(searchQuery, limit));
     }
 }
