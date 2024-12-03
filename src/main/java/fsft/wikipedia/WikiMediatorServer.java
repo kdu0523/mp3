@@ -4,10 +4,12 @@ import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 
+//
+
 public class WikiMediatorServer {
     private final ServerSocket serverSocket;
     private final ExecutorService executorService;
-    private boolean isRunning;
+    private boolean isRunning; //need to check running status...
 
     /**
      * Start a server at a given port number, with the ability to process

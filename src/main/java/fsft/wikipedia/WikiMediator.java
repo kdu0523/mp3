@@ -2,8 +2,6 @@ package fsft.wikipedia;
 
 import java.util.*;
 import io.github.fastily.jwiki.core.*;
-import io.github.fastily.jwiki.dwrap.Revision;
-
 public class WikiMediator {
 
     /* TODO: Implement this datatype

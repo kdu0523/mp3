@@ -3,10 +3,6 @@ package fsft.fsftbuffer;
 import java.time.Duration;
 import java.util.*;
 
-import java.time.Duration;
-import java.util.*;
-
-
 /**
  * FSFTBuffer is a cache of objects that time out after a certain period of time.
  * The buffer has a fixed capacity and uses a least recently used (LRU) eviction
@@ -15,17 +11,18 @@ import java.util.*;
  *
  * @param <B> the type of the objects in the buffer
  */
-public class FSFTBuffer<B extends Bufferable> {
 
+public class FSFTBuffer<B extends Bufferable> {
     /* the default buffer size is 32 objects */
     public static final int DEFAULT_CAPACITY = 32;
 
     /* the default timeout value is 180 seconds */
     public static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(180);
 
-    /* TODO: Implement this datatype */
-    private final LinkedHashMap<String, B> buffer = new LinkedHashMap<>();
+    private final Map<String, B> buffer;
     private final int capacity;
+    private final Duration timeout;
+    private final Map<String, Long> timestamps;
 
     /**
      * Create a buffer with a fixed capacity and a timeout value.
@@ -42,6 +39,13 @@ public class FSFTBuffer<B extends Bufferable> {
             throw new IllegalArgumentException("Timeout must be a positive duration");
         }
         this.capacity = capacity;
+        this.timeout = timeout;
+        this.buffer = new LinkedHashMap<String, B>(capacity, 0.75f, true) {
+            protected boolean removeEldestEntry(Map.Entry<String, B> eldest) {
+                return size() > capacity;
+            }
+        };
+        this.timestamps = new HashMap<>();
     }
 
     /**
@@ -51,41 +55,51 @@ public class FSFTBuffer<B extends Bufferable> {
         this(DEFAULT_CAPACITY, DEFAULT_TIMEOUT);
     }
 
+    private void removeStaleEntries() {
+        long currentTime = System.currentTimeMillis();
+        timestamps.entrySet().removeIf(entry -> {
+            if (currentTime - entry.getValue() > timeout.toMillis()) {
+                buffer.remove(entry.getKey());
+                return true;
+            }
+            return false;
+        });
+    }
+
     /**
      * Add a value to the buffer.
      * If the buffer is full then remove the least recently accessed
      * object to make room for the new object.
-     * This method can be used to replace an object in the buffer with
-     * a newer instance. {@code b} is uniquely identified by its id,
-     * {@code b.id()}.
+     *
+     * @param b the object to add to the buffer
+     * @return true if the object was added successfully
      */
     public boolean put(B b) {
+        if (b == null) {
+            return false;
+        }
+        removeStaleEntries();
         String id = b.id();
-
-        if (buffer.containsKey(id)) {
-            buffer.remove(id);
-        }
-
         buffer.put(id, b);
-
-        if (buffer.size() > capacity) {
-            buffer.remove(buffer.keySet().iterator().next());
-        }
-
+        timestamps.put(id, System.currentTimeMillis());
         return true;
     }
 
-
     /**
      * @param id the identifier of the object to be retrieved
-     * @return the object that matches the identifier from the
-     * buffer
+     * @return the object that matches the identifier from the buffer
+     * @throws ObjectNotFoundException if the object is not found or has timed out
      */
     public B get(String id) throws ObjectNotFoundException {
+        if (id == null) {
+            throw new ObjectNotFoundException("Cannot get object with null id.");
+        }
+        removeStaleEntries();
         B obj = buffer.get(id);
         if (obj == null) {
             throw new ObjectNotFoundException("Object " + id + " not found in the buffer.");
         }
+        touch(id);
         return obj;
     }
 
@@ -98,12 +112,10 @@ public class FSFTBuffer<B extends Bufferable> {
      * @return true if successful and false otherwise
      */
     public boolean touch(String id) {
-        if (buffer.containsKey(id)) {
-            B value = buffer.remove(id);
-            buffer.put(id, value);
-            return true;
+        if (id == null || !buffer.containsKey(id)) {
+            return false;
         }
-        return false;
+        timestamps.put(id, System.currentTimeMillis());
+        return true;
     }
-
 }
